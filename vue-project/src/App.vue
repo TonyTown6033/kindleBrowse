@@ -1,9 +1,31 @@
 <script setup>
 import BookUpload from './components/BookUpload.vue'
 import BookList from './components/BookList.vue'
-import { ref } from 'vue'
+import Auth from './components/Auth.vue'
+import { ref, onMounted } from 'vue'
 
 const bookListRef = ref(null)
+const isAuthenticated = ref(false)
+const currentUsername = ref('')
+
+onMounted(() => {
+  const token = localStorage.getItem('token')
+  if (token) {
+    // Optionally verify token valid here
+    isAuthenticated.value = true
+  }
+})
+
+const handleLoginSuccess = (username) => {
+  isAuthenticated.value = true
+  currentUsername.value = username
+}
+
+const logout = () => {
+  localStorage.removeItem('token')
+  isAuthenticated.value = false
+  currentUsername.value = ''
+}
 
 const refreshList = () => {
   if (bookListRef.value) {
@@ -19,11 +41,20 @@ const refreshList = () => {
         <h1>Kindle Online</h1>
         <p class="subtitle">Your Personal E-book Cloud</p>
       </div>
+      
+      <div v-if="isAuthenticated" class="user-controls">
+        <span>Hello, User</span>
+        <button @click="logout" class="logout-btn">Logout</button>
+      </div>
     </header>
 
-    <main>
+    <main v-if="isAuthenticated">
       <BookUpload @upload-success="refreshList" />
       <BookList ref="bookListRef" />
+    </main>
+    
+    <main v-else>
+      <Auth @login-success="handleLoginSuccess" />
     </main>
     
     <footer>
@@ -50,6 +81,28 @@ header {
   text-align: center;
   border-bottom: 1px solid #eee;
   padding-bottom: 2rem;
+  position: relative;
+}
+
+.user-controls {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  font-size: 0.9rem;
+}
+
+.logout-btn {
+  background: none;
+  border: none;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
+  margin-top: 5px;
+  font-size: 0.8rem;
+  color: #666;
 }
 
 h1 {

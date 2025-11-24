@@ -6,10 +6,20 @@ const loading = ref(false)
 
 const fetchBooks = async () => {
   loading.value = true
+  const token = localStorage.getItem('token')
+  
   try {
-    const response = await fetch('/api/books')
+    const response = await fetch('/api/books', {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    })
+    
     if (response.ok) {
       books.value = await response.json()
+    } else if (response.status === 401) {
+       // Handle unauthorized (maybe event bus logout or just silent fail)
+       console.error('Unauthorized')
     }
   } catch (error) {
     console.error('Failed to fetch books:', error)
@@ -25,6 +35,32 @@ const formatSize = (bytes) => {
   const sizes = ['B', 'KB', 'MB', 'GB']
   const i = Math.floor(Math.log(bytes) / Math.log(k))
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+}
+
+const getDownloadUrl = (book) => {
+   // We need to append auth token? 
+   // Standard browser download via <a> tag cannot add headers.
+   // Solution 1: Use a query param token ?token=... (Less secure but works for simple apps)
+   // Solution 2: The download endpoint could check cookie? (We are using Bearer header)
+   // Solution 3: Fetch blob and save (Works but heavier for large files on Kindle browser?)
+   
+   // Given Kindle's limited browser, fetch blob might crash or not trigger download UI properly.
+   // Simple token in query param is pragmatic for this use case.
+   
+   // Let's update backend to accept token in query param for download endpoint as fallback?
+   // OR: Just assume users are fine with `fetch` blob if file size is reasonable.
+   // BUT Kindle browser is quirky.
+   
+   // Let's stick to href but we need a way to authenticate.
+   // The simplest way for file download with auth is cookies.
+   // But we implemented Header auth.
+   
+   // WORKAROUND: Implement a "signed URL" or temporary download token?
+   // Or just allow download with `?token=` query param.
+   // I will update backend to allow `token` query param for the download endpoint.
+   
+   const token = localStorage.getItem('token')
+   return `${book.url}?token=${token}`
 }
 
 defineExpose({ fetchBooks })
@@ -48,12 +84,12 @@ onMounted(() => {
     </div>
     
     <ul v-else class="book-list">
-      <li v-for="book in books" :key="book.name" class="book-item">
+      <li v-for="book in books" :key="book.id" class="book-item">
         <div class="book-details">
           <span class="book-title">{{ book.name }}</span>
           <span class="book-meta">{{ formatSize(book.size) }}</span>
         </div>
-        <a :href="book.url" class="download-button" download>
+        <a :href="getDownloadUrl(book)" class="download-button" download>
           Download
         </a>
       </li>

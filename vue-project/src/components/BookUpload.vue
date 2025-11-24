@@ -28,10 +28,15 @@ const uploadFile = async () => {
 
   const formData = new FormData()
   formData.append('file', files[0])
+  
+  const token = localStorage.getItem('token')
 
   try {
     const response = await fetch('/api/upload', {
       method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      },
       body: formData
     })
     
@@ -46,7 +51,12 @@ const uploadFile = async () => {
         if (isSuccess.value) message.value = ''
       }, 3000)
     } else {
-      message.value = 'Upload failed. Please try again.'
+      if (response.status === 401) {
+        message.value = 'Session expired. Please login again.'
+        // Optionally emit logout event
+      } else {
+        message.value = 'Upload failed. Please try again.'
+      }
       isSuccess.value = false
     }
   } catch (error) {
