@@ -20,7 +20,11 @@ SECRET_KEY = "your-secret-key-keep-it-secret"  # Change this in production!
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 UPLOAD_DIR = "uploads"
-DATABASE_URL = "sqlite:///./sql_app.db"
+
+# Use a storage directory for the database to allow easier volume mapping in Docker
+STORAGE_DIR = "storage"
+os.makedirs(STORAGE_DIR, exist_ok=True)
+DATABASE_URL = f"sqlite:///./{STORAGE_DIR}/sql_app.db"
 
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 

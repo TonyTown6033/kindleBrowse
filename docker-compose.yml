@@ -8,5 +8,5 @@ services:
       - "8000:8000"
     volumes:
       - ./uploads:/app/uploads
+      - ./storage:/app/storage
     restart: unless-stopped
-
