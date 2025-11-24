@@ -18,7 +18,15 @@ const fetchBooks = async () => {
   }
 }
 
-// Expose fetchBooks so parent can call it
+// Helper to format date if we had it, but we'll just stick to size for now
+const formatSize = (bytes) => {
+  if (bytes === 0) return '0 B'
+  const k = 1024
+  const sizes = ['B', 'KB', 'MB', 'GB']
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+}
+
 defineExpose({ fetchBooks })
 
 onMounted(() => {
@@ -27,76 +35,147 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="book-list">
-    <h3>Library</h3>
-    <div v-if="loading">Loading...</div>
-    <div v-else-if="books.length === 0">No books found.</div>
-    <ul v-else class="list">
+  <div class="library-section">
+    <div class="section-header">
+      <h2>Your Library</h2>
+      <span class="count">{{ books.length }} items</span>
+    </div>
+
+    <div v-if="loading" class="state-message">Loading library...</div>
+    <div v-else-if="books.length === 0" class="state-message empty">
+      <p>No books yet.</p>
+      <p class="hint">Upload some books to get started.</p>
+    </div>
+    
+    <ul v-else class="book-list">
       <li v-for="book in books" :key="book.name" class="book-item">
-        <div class="book-info">
-          <span class="book-name">{{ book.name }}</span>
-          <span class="book-size">{{ (book.size / 1024 / 1024).toFixed(2) }} MB</span>
+        <div class="book-details">
+          <span class="book-title">{{ book.name }}</span>
+          <span class="book-meta">{{ formatSize(book.size) }}</span>
         </div>
-        <a :href="book.url" class="download-btn" download>Download</a>
+        <a :href="book.url" class="download-button" download>
+          Download
+        </a>
       </li>
     </ul>
   </div>
 </template>
 
 <style scoped>
-.book-list {
-  margin-top: 1rem;
+.library-section {
+  background-color: white;
 }
 
-.list {
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  border-bottom: 2px solid #000;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.5rem;
+}
+
+h2 {
+  font-size: 1.5rem;
+  font-weight: normal;
+  font-family: var(--font-main);
+}
+
+.count {
+  color: #666;
+  font-size: 0.9rem;
+  font-family: var(--font-ui);
+}
+
+.state-message {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: #666;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+}
+
+.state-message.empty .hint {
+  font-size: 0.9rem;
+  color: #999;
+  margin-top: 0.5rem;
+}
+
+.book-list {
   list-style: none;
   padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 
 .book-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem 0;
-  border-bottom: 1px solid #eee;
+  padding: 1.2rem;
+  background-color: #fff;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+  transition: border-color 0.2s;
 }
 
-.book-info {
+.book-item:hover {
+  border-color: #ccc;
+}
+
+.book-details {
   display: flex;
   flex-direction: column;
+  gap: 0.3rem;
+  flex: 1;
+  padding-right: 1rem;
 }
 
-.book-name {
-  font-weight: bold;
+.book-title {
   font-size: 1.1rem;
-  word-break: break-all;
+  color: #000;
+  font-family: var(--font-main);
+  line-height: 1.3;
+  word-break: break-word;
 }
 
-.book-size {
+.book-meta {
+  font-size: 0.85rem;
   color: #666;
-  font-size: 0.9rem;
+  font-family: var(--font-ui);
 }
 
-.download-btn {
-  background-color: black;
-  color: white;
-  padding: 8px 12px;
+.download-button {
+  background-color: #000;
+  color: #fff;
+  padding: 10px 20px;
+  border-radius: 50px; /* Pill shape */
   text-decoration: none;
-  border-radius: 4px;
   font-size: 0.9rem;
+  font-family: var(--font-ui);
+  font-weight: 500;
   white-space: nowrap;
-  margin-left: 10px;
+  transition: background-color 0.2s;
 }
 
-.download-btn:hover {
+.download-button:hover {
   background-color: #333;
+  color: #fff;
 }
 
-/* Kindle optimization */
+/* Kindle Touch Optimization */
 @media (hover: none) {
-  .download-btn {
-    padding: 12px 20px; /* Larger touch target */
+  .book-item {
+    padding: 1.5rem; /* Larger touch area */
+  }
+  
+  .download-button {
+    padding: 12px 24px;
+    background-color: white;
+    color: black;
+    border: 2px solid black;
   }
 }
 </style>
-
